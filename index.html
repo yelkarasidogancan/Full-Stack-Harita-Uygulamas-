@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/jspanel4@4.15.0/dist/jspanel.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="container">
+        <div id="addPointBtn" class="b">Add Point</div>
+        <div class="b">Query Point</div>
+        <!-- <button class="button button--mimas"><span>Render</span></button> -->
+        <!-- <button class="button button--mimas"><span>Render</span></button> -->
+      </div>
+    </nav>
+    <div id="icon" class="icon" onclick="changeIcon()">
+      <i id="iconid" class="fa fa-arrow-up" aria-hidden="true"></i>
+    </div>
+    <div id="settings" class="settings" onclick="openModalSettings()">
+      <i id="settingsid" class="fa fa-cog" aria-hidden="true"></i>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal">
+      <div class="modal-container">
+        <div class="settingsItem">
+          <h1>Temayı seç</h1>
+          <section id="pattern6">
+            <label class="blue"
+              ><input class="input" value="blue" type="radio" name="g6" checked
+            /></label>
+            <label class="red"
+              ><input class="input" value="red" type="radio" name="g6"
+            /></label>
+            <label class="green"
+              ><input class="input" value="green" type="radio" name="g6"
+            /></label>
+          </section>
+        </div>
+        <div class="button-container">
+          <div class="b" onclick="kaydet()">Kaydet</div>
+          <div id="closeButton" class="b" onclick="closeModalSettings()">
+            Kapat
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.15.0/dist/jspanel.js"></script>
+    <script type="module" src="main.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
