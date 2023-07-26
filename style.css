@@ -258,3 +258,13 @@ input {
 input:focus {
   background-color: rgb(246, 246, 246);
 }
+.buttonss {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+.r {
+  background-color: red;
+  border: 1px solid red;
+}

@@ -59,4 +59,39 @@ function kaydet() {
       //  b.style.border = "1px solid #142d4c";
     });
   }
+  modal.style.visibility = "hidden";
+  modalContainer.style.top = "40%";
+  modalContainer.style.opacity = "0";
 }
+// Modal
+
+var settings = document.querySelector(".settings");
+var modal = document.querySelector(".modal");
+var modalContainer = document.querySelector(".modal-container");
+var close = document.querySelector("#closeButton");
+
+settings.addEventListener("click", function () {
+  modal.style.visibility = "visible";
+  modalContainer.style.top = "50%";
+  modalContainer.style.opacity = "1";
+});
+close.addEventListener("click", function () {
+  modal.style.visibility = "hidden";
+  modalContainer.style.top = "40%";
+  modalContainer.style.opacity = "0";
+});
+
+//Navbar
+var nav = document.querySelector(".nav");
+var icon = document.querySelector("#icon");
+var iconid = document.querySelector("#iconid");
+
+icon.addEventListener("click", function () {
+  if (nav.style.transform == "translateY(-100px)") {
+    nav.style.transform = "translateY(0px)";
+    iconid.className = "fa fa-arrow-up";
+  } else {
+    nav.style.transform = "translateY(-100px)";
+    iconid.className = "fa fa-arrow-down";
+  }
+});
