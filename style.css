@@ -268,3 +268,46 @@ input:focus {
   background-color: red;
   border: 1px solid red;
 }
+#form {
+  z-index: 10;
+  display: none;
+  position: absolute;
+  left: 1.6%;
+  bottom: 3.3%;
+  background-color: white;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 20px;
+}
+.form-container {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+}
+select {
+  padding: 5px;
+  border-radius: 10px;
+  border: 2px solid #142d4c;
+  color: #142d4c;
+  font-size: 18px;
+}
+.button {
+  width: 120px;
+  height: 50px;
+  border: none;
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 5px 15px;
+  color: white;
+}
+.update {
+  background-color: #3977c4;
+}
+.delete {
+  background-color: #c43939;
+}
+.update:hover {
+  background-color: #3f83d7;
+}
+.delete:hover {
+  background-color: #d33d3d;
+}
