@@ -2,7 +2,7 @@ import "https://code.jquery.com/jquery-3.6.0.min.js";
 import "https://cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js";
 
 var markerCoordinates = [34.145435719887075, 39.40466275924388];
-
+console.log(ol.proj.fromLonLat(markerCoordinates));
 // new interaction
 const raster = new ol.layer.Tile({
   source: new ol.source.OSM(),
@@ -59,6 +59,7 @@ addPointButton.addEventListener("click", function () {
     map.addInteraction(snap);
 
     draw.on("drawend", function (event) {
+      map.removeInteraction(modify);
       const feature = event.feature;
       sourceFeature = event.feature;
       const featureType = feature.getGeometry().getType();
@@ -120,6 +121,47 @@ addPointButton.addEventListener("click", function () {
               buildingName = document.getElementById("buildingNameInput").value;
               console.log("clickedCoordinate:", clickedLonLat);
               console.log("buildingName:", buildingName);
+              addFeatureToBackend(
+                clickedLonLat[0],
+                clickedLonLat[1],
+                buildingName
+              );
+              function addFeatureToBackend(x, y, title) {
+                // API endpoint'i
+                var apiEndpoint = "http://localhost:5280/api/Door";
+
+                // Gönderilecek veri
+                var data = {
+                  Title: title,
+                  x: x,
+                  y: y,
+                };
+
+                fetch(apiEndpoint, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    // Diğer gerektiğinde isteğe özgü başlıkları ekleyebilirsiniz
+                  },
+                  body: JSON.stringify(data),
+                })
+                  .then(function (response) {
+                    if (!response.ok) {
+                      throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                  })
+                  .then(function (data) {
+                    console.log("Feature successfully added to the backend.");
+                  })
+                  .catch(function (error) {
+                    console.error(
+                      "Error while adding the feature to the backend:",
+                      error
+                    );
+                  });
+              }
+
               panel.close();
             });
         },
@@ -160,6 +202,7 @@ query.addEventListener("click", function () {
   <thead>
       <tr>
           <th>ID</th>
+          <th>Title</th>
           <th>X</th>
           <th>Y</th>
           <th></th>
@@ -176,14 +219,17 @@ query.addEventListener("click", function () {
       _incomingData.map((item) => {
         const row = document.createElement("tr");
         const id = document.createElement("td");
+        const title = document.createElement("td");
         const x = document.createElement("td");
         const y = document.createElement("td");
 
+        title.textContent = item.title;
         id.textContent = item.id;
         x.textContent = item.x;
         y.textContent = item.y;
 
         row.appendChild(id);
+        row.appendChild(title);
         row.appendChild(x);
         row.appendChild(y);
 
@@ -207,3 +253,117 @@ query.addEventListener("click", function () {
     },
   });
 });
+var hoverStyle = new ol.style.Style({
+  image: new ol.style.Circle({
+    radius: 8,
+    fill: new ol.style.Fill({
+      color: "yellow", // Özelliğin üzerine gelince sarı renk
+    }),
+    stroke: new ol.style.Stroke({
+      color: "black",
+      width: 2,
+    }),
+  }),
+});
+
+var defaultStyle = new ol.style.Style({
+  image: new ol.style.Circle({
+    radius: 6,
+    fill: new ol.style.Fill({
+      color: "blue", // Varsayılan mavi renk
+    }),
+    stroke: new ol.style.Stroke({
+      color: "blue",
+      width: 2,
+    }),
+  }),
+});
+
+var maviFeatures = _incomingData.map(function (data) {
+  var koordinat = ol.proj.fromLonLat([data.x, data.y]);
+  var feature = new ol.Feature(new ol.geom.Point(koordinat));
+  feature.setProperties({ id: data.id });
+  feature.setStyle(defaultStyle);
+  return feature;
+});
+
+var maviKatman = new ol.layer.Vector({
+  source: new ol.source.Vector({
+    features: maviFeatures,
+  }),
+});
+
+map.addLayer(maviKatman);
+
+// var selectedFeature = null;
+
+// map.on("click", function (event) {
+//   var clickedFeature = map.forEachFeatureAtPixel(
+//     event.pixel,
+//     function (feature, layer) {
+//       return feature;
+//     }
+//   );
+
+//   if (clickedFeature) {
+//     var featureId = clickedFeature.get("id");
+//     console.log(featureId);
+//     if (selectedFeature !== clickedFeature) {
+//       // Seçili özelliği güncellemek için önceki stili varsayılan stile çevir
+//       if (selectedFeature) {
+//         selectedFeature.setStyle(defaultStyle);
+//       }
+
+//       selectedFeature = clickedFeature;
+//       selectedFeature.setStyle(hoverStyle);
+
+//       // Silme işlemini onaylamak için alert göster
+//       var confirmDelete = confirm(
+//         "Bu özelliği silmek istediğinizden emin misiniz?"
+//       );
+//       if (confirmDelete) {
+//         // Özelliği sil
+//         deleteFeatureFromDatabase(featureId);
+//         maviKatman.getSource().removeFeature(selectedFeature);
+//         selectedFeature = null;
+//       }
+//     }
+//   } else {
+//     // Haritada boş bir alana tıklandığında seçili özelliği temizle
+//     if (selectedFeature) {
+//       selectedFeature.setStyle(defaultStyle);
+//       selectedFeature = null;
+//     }
+//   }
+// });
+
+// function deleteFeatureFromDatabase(featureId) {
+//   // API endpoint'i
+//   var apiEndpoint = "http://localhost:5280/api/Door" + featureId;
+
+//   fetch(apiEndpoint, {
+//     method: "DELETE",
+//     headers: {
+//       "Content-Type": "application/json",
+//       // Diğer gerektiğinde isteğe özgü başlıkları ekleyebilirsiniz
+//     },
+//   })
+//     .then(function (response) {
+//       if (!response.ok) {
+//         throw new Error("Network response was not ok");
+//       }
+//       return response.json();
+//     })
+//     .then(function (data) {
+//       console.log("Feature successfully deleted from the database.");
+//       // Silme işlemi başarılıysa, gerekirse haritadaki sembolü de kaldırabilirsiniz.
+//       // Örneğin:
+//       // if (selectedFeature) {
+//       //   maviKatman.getSource().removeFeature(selectedFeature);
+//       //   selectedFeature = null;
+//       // }
+//     })
+//     .catch(function (error) {
+//       console.error("Error while deleting the feature:", error);
+//     });
+// }
