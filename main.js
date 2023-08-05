@@ -237,6 +237,7 @@ query.addEventListener("click", function () {
         const updateButton = document.createElement("button");
         updateButton.textContent = "Update";
         updateButton.classList.add("button", "update");
+        updateButton.id = "updateButtonId";
         updateCell.appendChild(updateButton);
         row.appendChild(updateCell);
 
@@ -244,6 +245,7 @@ query.addEventListener("click", function () {
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "Delete";
         deleteButton.classList.add("button", "delete");
+        deleteButton.id = "deleteButtonId";
         deleteCell.appendChild(deleteButton);
         row.appendChild(deleteCell);
 
@@ -253,24 +255,12 @@ query.addEventListener("click", function () {
     },
   });
 });
-var hoverStyle = new ol.style.Style({
-  image: new ol.style.Circle({
-    radius: 8,
-    fill: new ol.style.Fill({
-      color: "yellow", // Özelliğin üzerine gelince sarı renk
-    }),
-    stroke: new ol.style.Stroke({
-      color: "black",
-      width: 2,
-    }),
-  }),
-});
 
 var defaultStyle = new ol.style.Style({
   image: new ol.style.Circle({
     radius: 6,
     fill: new ol.style.Fill({
-      color: "blue", // Varsayılan mavi renk
+      color: "blue",
     }),
     stroke: new ol.style.Stroke({
       color: "blue",
@@ -295,75 +285,92 @@ var maviKatman = new ol.layer.Vector({
 
 map.addLayer(maviKatman);
 
-// var selectedFeature = null;
+var selectedFeature = null;
 
-// map.on("click", function (event) {
-//   var clickedFeature = map.forEachFeatureAtPixel(
-//     event.pixel,
-//     function (feature, layer) {
-//       return feature;
-//     }
-//   );
+map.on("click", function (event) {
+  var clickedFeature = map.forEachFeatureAtPixel(
+    event.pixel,
+    function (feature, layer) {
+      return feature;
+    }
+  );
+  try {
+    let a = clickedFeature.get("id");
+    if (a > 0) {
+      if (clickedFeature) {
+        var featureId = clickedFeature.get("id");
 
-//   if (clickedFeature) {
-//     var featureId = clickedFeature.get("id");
-//     console.log(featureId);
-//     if (selectedFeature !== clickedFeature) {
-//       // Seçili özelliği güncellemek için önceki stili varsayılan stile çevir
-//       if (selectedFeature) {
-//         selectedFeature.setStyle(defaultStyle);
-//       }
+        selectedFeature = clickedFeature;
+        const panel = jsPanel.create({
+          headerTitle: "demo panel",
+          theme: "dark",
+          position: "center",
+          borderRadius: "1rem",
+          boxShadow: 5,
+          contentSize: "600 350",
+          content: `
+            <div class="form">
+              <div class="input-container">
+                <label>Building Name </label>
+                <input type="text" id="test" placeholder="Input 1" readonly>
+              </div>
+              
+               <div class="buttonss">
+                 <div id="updateBuilding" class="b">Update</div>
+                 <div id="deleteBuilding" class="b r">Delete</div>
+               </div>
+  
+            </div>
+        `,
+          callback: function () {
+            let id = parseInt(featureId);
+            const targetIndex = _incomingData.findIndex(
+              (item) => item.id == featureId
+            );
+            document.getElementById("test").value =
+              _incomingData[targetIndex].title;
 
-//       selectedFeature = clickedFeature;
-//       selectedFeature.setStyle(hoverStyle);
+            deleteBuilding.addEventListener("click", function () {
+              panel.close();
+              deleteFeatureFromDatabase(featureId);
+              maviKatman.getSource().removeFeature(selectedFeature);
+              selectedFeature = null;
+            });
+            updateBuilding.addEventListener("click", function () {
+              panel.close();
+            });
+          },
+        });
+      }
+    }
+  } catch {
+    console.log("sıkıntı yok");
+  }
+});
 
-//       // Silme işlemini onaylamak için alert göster
-//       var confirmDelete = confirm(
-//         "Bu özelliği silmek istediğinizden emin misiniz?"
-//       );
-//       if (confirmDelete) {
-//         // Özelliği sil
-//         deleteFeatureFromDatabase(featureId);
-//         maviKatman.getSource().removeFeature(selectedFeature);
-//         selectedFeature = null;
-//       }
-//     }
-//   } else {
-//     // Haritada boş bir alana tıklandığında seçili özelliği temizle
-//     if (selectedFeature) {
-//       selectedFeature.setStyle(defaultStyle);
-//       selectedFeature = null;
-//     }
-//   }
-// });
-
-// function deleteFeatureFromDatabase(featureId) {
-//   // API endpoint'i
-//   var apiEndpoint = "http://localhost:5280/api/Door" + featureId;
-
-//   fetch(apiEndpoint, {
-//     method: "DELETE",
-//     headers: {
-//       "Content-Type": "application/json",
-//       // Diğer gerektiğinde isteğe özgü başlıkları ekleyebilirsiniz
-//     },
-//   })
-//     .then(function (response) {
-//       if (!response.ok) {
-//         throw new Error("Network response was not ok");
-//       }
-//       return response.json();
-//     })
-//     .then(function (data) {
-//       console.log("Feature successfully deleted from the database.");
-//       // Silme işlemi başarılıysa, gerekirse haritadaki sembolü de kaldırabilirsiniz.
-//       // Örneğin:
-//       // if (selectedFeature) {
-//       //   maviKatman.getSource().removeFeature(selectedFeature);
-//       //   selectedFeature = null;
-//       // }
-//     })
-//     .catch(function (error) {
-//       console.error("Error while deleting the feature:", error);
-//     });
-// }
+function deleteFeatureFromDatabase(featureId) {
+  // API endpoint'i
+  var apiEndpoint = "http://localhost:5280/api/Door/" + featureId;
+  fetch(apiEndpoint, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .then(function (data) {
+      console.log("Feature successfully deleted from the database.");
+      if (selectedFeature) {
+        maviKatman.getSource().removeFeature(selectedFeature);
+        selectedFeature = null;
+      }
+    })
+    .catch(function (error) {
+      console.error("Error while deleting the feature:", error);
+    });
+}
