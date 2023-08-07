@@ -186,7 +186,7 @@ await fetch(apiUrl)
   .catch((error) => {
     console.error("Hata:", error);
   });
-
+console.log(_incomingData);
 // Show Marker on Map
 function addMarkersFromDatabase(dataArray) {
   dataArray.forEach(function (data) {
@@ -205,7 +205,7 @@ addMarkersFromDatabase(_incomingData);
 // Show Data on Table
 const query = document.querySelector("#queryPointBtn");
 query.addEventListener("click", function () {
-  jsPanel.create({
+  const panel = jsPanel.create({
     headerTitle: "demo panel",
     theme: "dark",
     contentSize: "800 550",
@@ -246,6 +246,7 @@ query.addEventListener("click", function () {
         updateButton.textContent = "Update";
         updateButton.classList.add("button", "update");
         updateButton.id = "updateButtonId";
+        updateButton.setAttribute("data-row-id", item.id);
         updateCell.appendChild(updateButton);
         row.appendChild(updateCell);
 
@@ -254,10 +255,24 @@ query.addEventListener("click", function () {
         deleteButton.textContent = "Delete";
         deleteButton.classList.add("button", "delete");
         deleteButton.id = "deleteButtonId";
+        deleteButton.setAttribute("data-row-id", item.id);
         deleteCell.appendChild(deleteButton);
         row.appendChild(deleteCell);
 
         tableBody.appendChild(row);
+
+        updateButton.addEventListener("click", (event) => {
+          const rowId = event.target.getAttribute("data-row-id");
+          updateOptions(rowId);
+          panel.close();
+          console.log("update clicked for row:", rowId);
+        });
+        deleteButton.addEventListener("click", (event) => {
+          const rowId = event.target.getAttribute("data-row-id");
+          deleteFeatureFromDatabase(rowId);
+          location.reload();
+          console.log("Delete clicked for row:", rowId);
+        });
       });
       let table = new DataTable("#myTable");
     },
@@ -377,11 +392,12 @@ function updateOptions(id) {
       var updateOnMapButton = document.querySelector("#updateOnMap");
       var updateOnPanelButton = document.querySelector("#updateOnPanel");
       updateOnMapButton.addEventListener("click", function () {
+        console.log(id);
         panel.close();
         enableModifyForId(id);
         modify.on("modifyend", function (event) {
           console.log("=== Modify end ===");
-          var modifiedFeature = event.features.getArray()[0]; // Tek bir feature olduğunu varsayalım
+          var modifiedFeature = event.features.getArray()[0];
           if (modifiedFeature) {
             var geometry = modifiedFeature.getGeometry();
             var coordinates = geometry.getCoordinates();
@@ -406,7 +422,7 @@ function enableModifyForId(id) {
   map.removeInteraction(modify);
 
   var selectedFeature = source.getFeatures().find(function (feature) {
-    return feature.getProperties().id === id;
+    return feature.getProperties().id == id;
   });
 
   if (selectedFeature) {
