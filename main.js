@@ -1,8 +1,7 @@
 import "https://code.jquery.com/jquery-3.6.0.min.js";
 import "https://cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js";
 
-var markerCoordinates = [34.145435719887075, 39.40466275924388];
-console.log(ol.proj.fromLonLat(markerCoordinates));
+const markerCoordinates = [32.85427, 39.91987];
 // new interaction
 const raster = new ol.layer.Tile({
   source: new ol.source.OSM(),
@@ -36,14 +35,16 @@ var sourceFeature = "";
 let handler = function (event) {
   source.removeFeature(sourceFeature);
 };
+
 document.addEventListener("jspanelcloseduser", handler, false);
 const addPointButton = document.getElementById("addPointBtn");
 const form = document.getElementById("form");
+
+let modify = new ol.interaction.Modify({ source: source });
+
 addPointButton.addEventListener("click", function () {
   form.style.display = "block";
-  const modify = new ol.interaction.Modify({ source: source });
   map.addInteraction(modify);
-
   let draw, snap;
 
   const typeSelect = document.getElementById("type");
@@ -59,7 +60,6 @@ addPointButton.addEventListener("click", function () {
     map.addInteraction(snap);
 
     draw.on("drawend", function (event) {
-      map.removeInteraction(modify);
       const feature = event.feature;
       sourceFeature = event.feature;
       const featureType = feature.getGeometry().getType();
@@ -81,7 +81,7 @@ addPointButton.addEventListener("click", function () {
         content: `
             <div class="form">
               <div class="input-container">
-                <label>Langitude Value </label>
+                <label>Longitude Value </label>
                 <input type="text" id="input1" placeholder="Input 1" readonly>
               </div>
               <div class="input-container">
@@ -100,7 +100,6 @@ addPointButton.addEventListener("click", function () {
             </div>
         `,
         contentSize: "700 550",
-
         headerTitle: featureType,
         position: "center",
 
@@ -127,10 +126,8 @@ addPointButton.addEventListener("click", function () {
                 buildingName
               );
               function addFeatureToBackend(x, y, title) {
-                // API endpoint'i
                 var apiEndpoint = "http://localhost:5280/api/Door";
-
-                // Gönderilecek veri
+                // Sending Data
                 var data = {
                   Title: title,
                   x: x,
@@ -141,7 +138,6 @@ addPointButton.addEventListener("click", function () {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
-                    // Diğer gerektiğinde isteğe özgü başlıkları ekleyebilirsiniz
                   },
                   body: JSON.stringify(data),
                 })
@@ -179,7 +175,6 @@ addPointButton.addEventListener("click", function () {
 });
 
 // Data Fetch
-
 const apiUrl = "http://localhost:5280/api/Door";
 var _incomingData = null;
 
@@ -192,6 +187,22 @@ await fetch(apiUrl)
     console.error("Hata:", error);
   });
 
+// Show Marker on Map
+function addMarkersFromDatabase(dataArray) {
+  dataArray.forEach(function (data) {
+    var coordinates = [data.x, data.y];
+    var feature = new ol.Feature(
+      new ol.geom.Point(ol.proj.fromLonLat(coordinates))
+    );
+    feature.setProperties({ id: data.id });
+    source.addFeature(feature);
+  });
+}
+
+// Show Marker on Map Function
+addMarkersFromDatabase(_incomingData);
+
+// Show Data on Table
 const query = document.querySelector("#queryPointBtn");
 query.addEventListener("click", function () {
   jsPanel.create({
@@ -201,7 +212,6 @@ query.addEventListener("click", function () {
     content: `<table id="myTable" class="display">
   <thead>
       <tr>
-          <th>ID</th>
           <th>Title</th>
           <th>X</th>
           <th>Y</th>
@@ -224,11 +234,9 @@ query.addEventListener("click", function () {
         const y = document.createElement("td");
 
         title.textContent = item.title;
-        id.textContent = item.id;
         x.textContent = item.x;
         y.textContent = item.y;
 
-        row.appendChild(id);
         row.appendChild(title);
         row.appendChild(x);
         row.appendChild(y);
@@ -256,37 +264,9 @@ query.addEventListener("click", function () {
   });
 });
 
-var defaultStyle = new ol.style.Style({
-  image: new ol.style.Circle({
-    radius: 6,
-    fill: new ol.style.Fill({
-      color: "blue",
-    }),
-    stroke: new ol.style.Stroke({
-      color: "blue",
-      width: 2,
-    }),
-  }),
-});
-
-var maviFeatures = _incomingData.map(function (data) {
-  var koordinat = ol.proj.fromLonLat([data.x, data.y]);
-  var feature = new ol.Feature(new ol.geom.Point(koordinat));
-  feature.setProperties({ id: data.id });
-  feature.setStyle(defaultStyle);
-  return feature;
-});
-
-var maviKatman = new ol.layer.Vector({
-  source: new ol.source.Vector({
-    features: maviFeatures,
-  }),
-});
-
-map.addLayer(maviKatman);
-
 var selectedFeature = null;
 
+// Catch Marker
 map.on("click", function (event) {
   var clickedFeature = map.forEachFeatureAtPixel(
     event.pixel,
@@ -299,6 +279,7 @@ map.on("click", function (event) {
     if (a > 0) {
       if (clickedFeature) {
         var featureId = clickedFeature.get("id");
+        console.log(featureId);
 
         selectedFeature = clickedFeature;
         const panel = jsPanel.create({
@@ -319,7 +300,6 @@ map.on("click", function (event) {
                  <div id="updateBuilding" class="b">Update</div>
                  <div id="deleteBuilding" class="b r">Delete</div>
                </div>
-  
             </div>
         `,
           callback: function () {
@@ -333,11 +313,12 @@ map.on("click", function (event) {
             deleteBuilding.addEventListener("click", function () {
               panel.close();
               deleteFeatureFromDatabase(featureId);
-              maviKatman.getSource().removeFeature(selectedFeature);
               selectedFeature = null;
+              location.reload();
             });
             updateBuilding.addEventListener("click", function () {
               panel.close();
+              updateOptions(id);
             });
           },
         });
@@ -347,9 +328,8 @@ map.on("click", function (event) {
     console.log("sıkıntı yok");
   }
 });
-
+// Delete From Database
 function deleteFeatureFromDatabase(featureId) {
-  // API endpoint'i
   var apiEndpoint = "http://localhost:5280/api/Door/" + featureId;
   fetch(apiEndpoint, {
     method: "DELETE",
@@ -366,11 +346,216 @@ function deleteFeatureFromDatabase(featureId) {
     .then(function (data) {
       console.log("Feature successfully deleted from the database.");
       if (selectedFeature) {
-        maviKatman.getSource().removeFeature(selectedFeature);
         selectedFeature = null;
       }
     })
     .catch(function (error) {
       console.error("Error while deleting the feature:", error);
+    });
+}
+// Update Options (Map or Panel)
+function updateOptions(id) {
+  const panel = jsPanel.create({
+    headerTitle: "demo panel",
+    theme: "dark",
+    position: "center",
+    borderRadius: "1rem",
+    boxShadow: 5,
+    contentSize: "600 350",
+    content: `
+      <div class="form">        
+         <div class="title-container">
+          <h2>Güncelleme Türü</h2
+         </div>
+         <div class="buttonss">
+           <div id="updateOnMap" class="b">Harita</div>
+           <div id="updateOnPanel" class="b">Panel</div>
+         </div>
+      </div>
+  `,
+    callback: function () {
+      var updateOnMapButton = document.querySelector("#updateOnMap");
+      var updateOnPanelButton = document.querySelector("#updateOnPanel");
+      updateOnMapButton.addEventListener("click", function () {
+        panel.close();
+        enableModifyForId(id);
+        modify.on("modifyend", function (event) {
+          console.log("=== Modify end ===");
+          var modifiedFeature = event.features.getArray()[0]; // Tek bir feature olduğunu varsayalım
+          if (modifiedFeature) {
+            var geometry = modifiedFeature.getGeometry();
+            var coordinates = geometry.getCoordinates();
+            var [longitude, latitude] = ol.proj.toLonLat(coordinates);
+
+            console.log("Güncellenmiş Latitude:", latitude);
+            console.log("Güncellenmiş Longitude:", longitude);
+          }
+          updateOnMapPanel(id, longitude, latitude);
+        });
+      });
+      updateOnPanelButton.addEventListener("click", function () {
+        panel.close();
+        updateOnPanel(id);
+        console.log(id);
+      });
+    },
+  });
+}
+// Modify Selected Marker
+function enableModifyForId(id) {
+  map.removeInteraction(modify);
+
+  var selectedFeature = source.getFeatures().find(function (feature) {
+    return feature.getProperties().id === id;
+  });
+
+  if (selectedFeature) {
+    modify = new ol.interaction.Modify({
+      features: new ol.Collection([selectedFeature]),
+    });
+
+    map.addInteraction(modify);
+  }
+}
+// Update On Map after Panel
+function updateOnMapPanel(id, longitude, latitude) {
+  const panel = jsPanel.create({
+    headerTitle: "demo panel",
+    theme: "dark",
+    position: "center",
+    borderRadius: "1rem",
+    boxShadow: 5,
+    contentSize: "600 600",
+    content: `
+    <div class="form">
+      <div class="input-container">
+        <label>Longitude Value </label>
+        <input type="text" id="x" placeholder="Input 1" >
+      </div>
+      <div class="input-container">
+      <label>Latitude Value </label>
+        <input type="text" id="y" placeholder="Input 2" >
+      </div>
+      <div class="input-container">
+        <label>Door Name </label>
+        <input type="text" id="title" >
+      </div>
+       <div class="buttonss">
+         <div id="updateOnPanelButton" class="b">Update</div>
+         <div id="exitOnPanelButton" class="b r">Exit</div>
+       </div>
+
+    </div>
+`,
+    callback: function () {
+      const targetIndex = _incomingData.findIndex((item) => item.id == id);
+      var x = document.getElementById("x");
+      var y = document.getElementById("y");
+      var title = document.getElementById("title");
+
+      x.value = longitude;
+      y.value = latitude;
+      title.value = _incomingData[targetIndex].title;
+
+      let exitOnPanelButton = document.querySelector("#exitOnPanelButton");
+      let updateOnPanelButton = document.querySelector("#updateOnPanelButton");
+      exitOnPanelButton.addEventListener("click", function () {
+        panel.close();
+      });
+      updateOnPanelButton.addEventListener("click", function () {
+        panel.close();
+        updateDatabase(id, x.value, y.value, title.value);
+        location.reload();
+      });
+    },
+  });
+}
+//Update on Panel
+function updateOnPanel(id) {
+  const panel = jsPanel.create({
+    headerTitle: "demo panel",
+    theme: "dark",
+    position: "center",
+    borderRadius: "1rem",
+    boxShadow: 5,
+    contentSize: "600 600",
+    content: `
+    <div class="form">
+      <div class="input-container">
+        <label>Longitude Value </label>
+        <input type="text" id="x" placeholder="Input 1" >
+      </div>
+      <div class="input-container">
+      <label>Latitude Value </label>
+        <input type="text" id="y" placeholder="Input 2" >
+      </div>
+      <div class="input-container">
+        <label>Door Name </label>
+        <input type="text" id="title" >
+      </div>
+       <div class="buttonss">
+         <div id="updateOnPanelButton" class="b">Update</div>
+         <div id="exitOnPanelButton" class="b r">Exit</div>
+       </div>
+
+    </div>
+`,
+    callback: function () {
+      const targetIndex = _incomingData.findIndex((item) => item.id == id);
+      var x = document.getElementById("x");
+      var y = document.getElementById("y");
+      var title = document.getElementById("title");
+
+      x.value = _incomingData[targetIndex].x;
+      y.value = _incomingData[targetIndex].y;
+      title.value = _incomingData[targetIndex].title;
+
+      var exitOnPanelButton = document.querySelector("#exitOnPanelButton");
+      var updateOnPanelButton = document.querySelector("#updateOnPanelButton");
+      exitOnPanelButton.addEventListener("click", function () {
+        panel.close();
+      });
+      updateOnPanelButton.addEventListener("click", function () {
+        panel.close();
+        updateDatabase(id, x.value, y.value, title.value);
+        location.reload();
+      });
+    },
+  });
+}
+// Update from Database
+function updateDatabase(id, x, y, title) {
+  const apiUrl = "http://localhost:5280/api/Door/coordinate";
+  console.log(id);
+  var a = parseFloat(x);
+  var b = parseFloat(y);
+  var c = parseInt(id);
+
+  const dataToUpdate = {
+    id: c,
+    title: title,
+    x: a,
+    y: b,
+  };
+
+  fetch(apiUrl, {
+    method: "PUT",
+    headers: {
+      accept: "*/*",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(dataToUpdate),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((updatedData) => {
+      console.log("Güncellenmiş veri:", updatedData);
+    })
+    .catch((error) => {
+      console.error("Güncelleme hatası:", error);
     });
 }

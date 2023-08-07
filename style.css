@@ -311,3 +311,9 @@ select {
 .delete:hover {
   background-color: #d33d3d;
 }
+.title-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
