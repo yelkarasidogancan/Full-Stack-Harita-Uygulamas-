@@ -2,7 +2,6 @@ import "https://code.jquery.com/jquery-3.6.0.min.js";
 import "https://cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js";
 
 const markerCoordinates = [32.85427, 39.91987];
-// new interaction
 const raster = new ol.layer.Tile({
   source: new ol.source.OSM(),
 });
@@ -61,6 +60,7 @@ addPointButton.addEventListener("click", function () {
 
     draw.on("drawend", function (event) {
       const feature = event.feature;
+      console.log(feature);
       sourceFeature = event.feature;
       const featureType = feature.getGeometry().getType();
 
@@ -182,11 +182,12 @@ await fetch(apiUrl)
   .then((response) => response.json())
   .then((data) => {
     _incomingData = data;
+    console.log(typeof data);
   })
   .catch((error) => {
     console.error("Hata:", error);
   });
-console.log(_incomingData);
+
 // Show Marker on Map
 function addMarkersFromDatabase(dataArray) {
   dataArray.forEach(function (data) {
@@ -242,19 +243,20 @@ query.addEventListener("click", function () {
         row.appendChild(y);
 
         const updateCell = document.createElement("td");
-        const updateButton = document.createElement("button");
-        updateButton.textContent = "Update";
-        updateButton.classList.add("button", "update");
+        const updateButton = document.createElement("div");
+
         updateButton.id = "updateButtonId";
+        updateButton.innerHTML =
+          '<i class="fa fa-pencil" aria-hidden="true"></i>';
         updateButton.setAttribute("data-row-id", item.id);
         updateCell.appendChild(updateButton);
         row.appendChild(updateCell);
 
         const deleteCell = document.createElement("td");
-        const deleteButton = document.createElement("button");
-        deleteButton.textContent = "Delete";
-        deleteButton.classList.add("button", "delete");
+        const deleteButton = document.createElement("div");
         deleteButton.id = "deleteButtonId";
+        deleteButton.innerHTML =
+          '<i class="fa fa-trash" aria-hidden="true"></i>';
         deleteButton.setAttribute("data-row-id", item.id);
         deleteCell.appendChild(deleteButton);
         row.appendChild(deleteCell);
@@ -380,10 +382,10 @@ function updateOptions(id) {
     content: `
       <div class="form">        
          <div class="title-container">
-          <h2>Güncelleme Türü</h2
+          <h2>Update Option</h2
          </div>
          <div class="buttonss">
-           <div id="updateOnMap" class="b">Harita</div>
+           <div id="updateOnMap" class="b">Map</div>
            <div id="updateOnPanel" class="b">Panel</div>
          </div>
       </div>
@@ -542,16 +544,12 @@ function updateOnPanel(id) {
 // Update from Database
 function updateDatabase(id, x, y, title) {
   const apiUrl = "http://localhost:5280/api/Door/coordinate";
-  console.log(id);
-  var a = parseFloat(x);
-  var b = parseFloat(y);
-  var c = parseInt(id);
 
   const dataToUpdate = {
-    id: c,
+    id: parseInt(id),
     title: title,
-    x: a,
-    y: b,
+    x: parseFloat(x),
+    y: parseFloat(y),
   };
 
   fetch(apiUrl, {
