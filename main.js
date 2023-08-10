@@ -43,7 +43,6 @@ let modify = new ol.interaction.Modify({ source: source });
 
 addPointButton.addEventListener("click", function () {
   form.style.display = "block";
-  map.addInteraction(modify);
   let draw, snap;
 
   const typeSelect = document.getElementById("type");
