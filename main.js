@@ -9,13 +9,17 @@ const raster = new ol.layer.Tile({
 const source = new ol.source.Vector();
 const vector = new ol.layer.Vector({
   source: source,
-  style: {
-    "fill-color": "rgba(255, 255, 255, 0.2)",
-    "stroke-color": "#ffcc33",
-    "stroke-width": 2,
-    "circle-radius": 7,
-    "circle-fill-color": "#ffcc33",
-  },
+  style: new ol.style.Style({
+    image: new ol.style.Icon({
+      anchor: [0.5, 1],
+      crossOrigin: "anonymous",
+      src: "https://docs.maptiler.com/openlayers/default-marker/marker-icon.png",
+    }),
+  }),
+});
+var overlay = new ol.Overlay({
+  element: document.getElementById("overlay"),
+  positioning: "bottom-center",
 });
 
 const extent = ol.proj.get("EPSG:3857").getExtent().slice();
@@ -294,50 +298,100 @@ map.on("click", function (event) {
     let a = clickedFeature.get("id");
     if (a > 0) {
       if (clickedFeature) {
+        var coord = event.coordinate;
+        var degrees = ol.proj.transform(coord, "EPSG:3857", "EPSG:4326");
+        var element = overlay.getElement();
         var featureId = clickedFeature.get("id");
-        console.log(featureId);
-
-        selectedFeature = clickedFeature;
-        const panel = jsPanel.create({
-          headerTitle: "demo panel",
-          theme: "dark",
-          position: "center",
-          borderRadius: "1rem",
-          boxShadow: 5,
-          contentSize: "600 350",
-          content: `
-            <div class="form">
-              <div class="input-container">
-                <label>Building Name </label>
-                <input type="text" id="test" placeholder="Input 1" readonly>
-              </div>
-              
-               <div class="buttonss">
-                 <div id="updateBuilding" class="b">Update</div>
-                 <div id="deleteBuilding" class="b r">Delete</div>
-               </div>
-            </div>
-        `,
-          callback: function () {
-            let id = parseInt(featureId);
-            const targetIndex = _incomingData.findIndex(
-              (item) => item.id == featureId
-            );
-            document.getElementById("test").value =
-              _incomingData[targetIndex].title;
-
-            deleteBuilding.addEventListener("click", function () {
-              panel.close();
-              deleteFeatureFromDatabase(featureId);
-              selectedFeature = null;
-              location.reload();
-            });
-            updateBuilding.addEventListener("click", function () {
-              panel.close();
-              updateOptions(id);
-            });
-          },
+        let id = parseInt(featureId);
+        const targetIndex = _incomingData.findIndex(
+          (item) => item.id == featureId
+        );
+        element.innerHTML = `<div class="popup">
+        <div>
+        <table class="pTable">
+        <tr>
+        <td class="pTd">Door</td>
+        <td class="pTd title" style="width: 150px;"></td>
+        </tr>
+         <tr>
+         <td class="pTd">Long</td>
+         <td class="pTd x" style="width: 150px;">${_incomingData[targetIndex].x}</td>
+         </tr>
+         <tr>
+          <td class="pTd">Lat</td>
+          <td class="pTd y" style="width: 150px;">${_incomingData[targetIndex].y}</td>
+         </tr>
+       </table>
+       </div>
+       <div class="buttonContainer">
+         <button id="t">Update</button>
+         <button id="d">Delete</button>
+       </div>
+      </div>`;
+        overlay.setPosition(coord);
+        map.addOverlay(overlay);
+        var updateButton = document.getElementById("t");
+        var deleteButton = document.getElementById("d");
+        var popupContainer = document.querySelector(".markerPopup");
+        var title = document.querySelector(".title");
+        var x = document.querySelector(".x");
+        var y = document.querySelector(".y");
+        title.innerHTML = _incomingData[targetIndex].title;
+        x.innerHTML = _incomingData[targetIndex].x;
+        y.innerHTML = _incomingData[targetIndex].y;
+        updateButton.addEventListener("click", function () {
+          updateOptions(id);
+          popupContainer.classList.add("none");
         });
+        deleteButton.addEventListener("click", function () {
+          deleteFeatureFromDatabase(featureId);
+          selectedFeature = null;
+          location.reload();
+        });
+
+        // console.log(featureId);
+
+        // selectedFeature = clickedFeature;
+        // const panel = jsPanel.create({
+        //   headerTitle: "demo panel",
+        //   theme: "dark",
+        //   position: "center",
+        //   borderRadius: "1rem",
+        //   boxShadow: 5,
+        //   contentSize: "600 350",
+        //   content: `
+        //     <div class="form">
+        //       <div class="input-container">
+        //         <label>Building Name </label>
+        //         <input type="text" id="test" placeholder="Input 1" readonly>
+        //       </div>
+
+        //        <div class="buttonss">
+        //          <div id="updateBuilding" class="b">Update</div>
+        //          <div id="deleteBuilding" class="b r">Delete</div>
+        //        </div>
+        //     </div>
+        // `,
+        //   callback: function () {
+        //     let id = parseInt(featureId);
+        //     const targetIndex = _incomingData.findIndex(
+        //       (item) => item.id == featureId
+        //     );
+        //     document.getElementById("test").value =
+        //       _incomingData[targetIndex].title;
+
+        //     deleteBuilding.addEventListener("click", function () {
+        //       panel.close();
+        //       deleteFeatureFromDatabase(featureId);
+        //       selectedFeature = null;
+        //       location.reload();
+        //     });
+        //     updateBuilding.addEventListener("click", function () {
+        //       panel.close();
+        //       updateOptions(id);
+        //     });
+        //   },
+        // });
       }
     }
   } catch {
@@ -572,3 +626,14 @@ function updateDatabase(id, x, y, title) {
       console.error("Güncelleme hatası:", error);
     });
 }
+// map.on("click", function (event) {
+//   var coord = event.coordinate;
+//   var degrees = ol.proj.transform(coord, "EPSG:3857", "EPSG:4326");
+//   var element = overlay.getElement();
+//   element.innerHTML = `<button id="t">update</button><button>Delete</button>`;
+//   overlay.setPosition(coord);
+//   map.addOverlay(overlay);
+//   var updateButton = document.getElementById("t");
+//   updateButton.addEventListener("click", t);
+// });
+function t() {}

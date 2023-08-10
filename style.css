@@ -168,6 +168,8 @@ body {
   align-items: center;
   justify-content: center;
 }
+/* door name label */
+
 /* radio */
 
 input,
@@ -316,4 +318,55 @@ select {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+.markerPopup {
+  background-color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 20px;
+}
+.pTable,
+.pTd {
+  border: 0.5px solid rgb(171, 171, 171);
+  padding: 3px 5px;
+}
+.pTd {
+  color: rgb(79, 79, 79);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.popup {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+#t {
+  width: 75px;
+  height: 30px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  color: rgb(114, 114, 255);
+  background-color: rgb(215, 215, 255);
+}
+#d {
+  width: 75px;
+  height: 30px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  color: rgb(255, 114, 114);
+  background-color: rgb(255, 215, 215);
+}
+.buttonContainer {
+  display: flex;
+  gap: 10px;
+}
+.none {
+  display: none;
 }
